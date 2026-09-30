@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxPilot AI — Multilingual Real-Time Voice Copilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070B14;
+      --bg-surface: #0E1526;
+      --bg-card: #141C33;
+      --bg-card-hover: #1A2442;
+      --border-color: #1F2C4C;
+      --cyan: #00F5D4;
+      --cyan-glow: rgba(0, 245, 212, 0.35);
+      --indigo: #4361EE;
+      --purple: #7209B7;
+      --magenta: #F72585;
+      --amber: #FFB703;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow background */
+    .glow-bg {
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 245, 212, 0.08) 0%, rgba(67, 97, 238, 0.05) 50%, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Navbar */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(7, 11, 20, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .brand-logo svg {
+      width: 20px;
+      height: 20px;
+      fill: #070B14;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text span {
+      font-size: 0.72rem;
+      color: var(--cyan);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .badge-laptop {
+      background: rgba(0, 245, 212, 0.1);
+      border: 1px solid rgba(0, 245, 212, 0.3);
+      color: var(--cyan);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Main Container */
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+    }
+
+    @media (max-width: 992px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Column: Voice Experience */
+    .voice-hub {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 36px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Mode Selector Pills */
+    .mode-pills {
+      display: flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 32px;
+    }
+
+    .mode-pill {
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: none;
+      background: transparent;
+    }
+
+    .mode-pill.active {
+      background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(67, 97, 238, 0.25));
+      color: var(--cyan);
+      border: 1px solid rgba(0, 245, 212, 0.3);
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.15);
+    }
+
+    /* Voice Orb Stage */
+    .orb-stage {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 16px 0 28px;
+      cursor: pointer;
+    }
+
+    .orb-glow-outer {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--cyan-glow) 0%, transparent 70%);
+      opacity: 0.5;
+      transition: all 0.5s ease;
+    }
+
+    .orb-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(0, 245, 212, 0.25);
+      animation: rotateRing 20s linear infinite;
+    }
+
+    .orb-ring-1 { width: 230px; height: 230px; }
+    .orb-ring-2 { width: 200px; height: 200px; animation-direction: reverse; animation-duration: 15s; }
+
+    @keyframes rotateRing {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .orb-sphere {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0f1c3f 0%, #16244f 50%, #00F5D4 100%);
+      box-shadow: 0 0 35px var(--cyan-glow), inset 0 0 20px rgba(0, 245, 212, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.4s ease;
+      z-index: 2;
+    }
+
+    /* Orb States */
+    .orb-sphere.idle {
+      background: linear-gradient(135deg, #101935 0%, #1a2752 100%);
+      box-shadow: 0 0 20px rgba(67, 97, 238, 0.2);
+    }
+
+    .orb-sphere.listening {
+      background: linear-gradient(135deg, #052e2b 0%, #00f5d4 100%);
+      box-shadow: 0 0 45px rgba(0, 245, 212, 0.6), inset 0 0 25px rgba(255, 255, 255, 0.5);
+      animation: orbBreathe 2s ease-in-out infinite;
+    }
+
+    .orb-sphere.thinking {
+      background: linear-gradient(135deg, #3d1254 0%, #7209b7 50%, #ffb703 100%);
+      box-shadow: 0 0 40px rgba(114, 9, 183, 0.5);
+      animation: orbSpin 3s linear infinite;
+    }
+
+    .orb-sphere.speaking {
+      background: linear-gradient(135deg, #071e40 0%, #4361ee 50%, #f72585 100%);
+      box-shadow: 0 0 50px rgba(247, 37, 133, 0.55);
+      animation: orbPulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes orbBreathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    @keyframes orbSpin {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+
+    @keyframes orbPulse {
+      0% { transform: scale(0.96); }
+      100% { transform: scale(1.09); }
+    }
+
+    .orb-icon {
+      width: 44px;
+      height: 44px;
+      fill: #ffffff;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    .orb-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-top: 6px;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Status Label */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    /* Controls */
+    .orb-controls {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      color: #070B14;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px var(--cyan-glow);
+      transition: all 0.25s ease;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 245, 212, 0.5);
+    }
+
+    .btn-action.stop {
+      background: #EF4444;
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-icon {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    /* Barge-In Banner */
+    .barge-in-banner {
+      margin-top: 24px;
+      width: 100%;
+      background: rgba(67, 97, 238, 0.08);
+      border: 1px dashed rgba(67, 97, 238, 0.3);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .barge-in-banner strong {
+      color: var(--cyan);
+    }
+
+    /* Live Transcript Feed */
+    .transcript-box {
+      width: 100%;
+      margin-top: 24px;
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 6px;
+    }
+
+    .transcript-turn {
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .turn-user {
+      align-self: flex-end;
+      background: rgba(0, 245, 212, 0.12);
+      border: 1px solid rgba(0, 245, 212, 0.25);
+      color: var(--text-primary);
+      max-width: 85%;
+    }
+
+    .turn-agent {
+      align-self: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      max-width: 88%;
+    }
+
+    .turn-speaker {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .turn-agent .turn-speaker {
+      color: #818CF8;
+    }
+
+    /* Right Column: Smart Notes & History */
+    .sidebar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--cyan);
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--cyan);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .note-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .note-item:hover {
+      border-color: rgba(0, 245, 212, 0.4);
+    }
+
+    .note-item-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .note-item-summary {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px 12px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    /* Fast Action Chips */
+    .chips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .chip-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--cyan);
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-bg"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>VoxPilot AI</h1>
+        <span>Laptop Web Edition</span>
+      </div>
+    </div>
+    <div class="badge-laptop">
+      <div class="badge-dot"></div>
+      Autonomous Voice Ready
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <main>
+    <!-- Left: Voice Experience -->
+    <div class="voice-hub">
+      <!-- Mode Selection -->
+      <div class="mode-pills">
+        <button class="mode-pill active" data-mode="learn" onclick="selectMode('learn')">🎓 Learn Mode</button>
+        <button class="mode-pill" data-mode="ask" onclick="selectMode('ask')">💬 Ask Mode</button>
+        <button class="mode-pill" data-mode="translate" onclick="selectMode('translate')">🌐 Translate</button>
+      </div>
+
+      <!-- Voice Orb Stage -->
+      <div class="orb-stage" onclick="toggleConversation()">
+        <div class="orb-glow-outer" id="orbGlow"></div>
+        <div class="orb-ring orb-ring-1"></div>
+        <div class="orb-ring orb-ring-2"></div>
+        <div class="orb-sphere idle" id="orbSphere">
+          <svg class="orb-icon" viewBox="0 0 24 24" id="orbIcon">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+          <span class="orb-label" id="orbLabel">IDLE</span>
+        </div>
+      </div>
+
+      <!-- Status Badge -->
+      <div class="status-badge" id="statusBadge">
+        <span>Ready when you are</span>
+      </div>
+
+      <!-- Main Action Controls -->
+      <div class="orb-controls">
+        <button class="btn-action" id="btnMainAction" onclick="toggleConversation()">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span id="btnMainText">Start Conversation</span>
+        </button>
+        <button class="btn-icon" title="Save Note" onclick="saveCurrentNote()">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        </button>
+      </div>
+
+      <!-- Barge-In Info Banner -->
+      <div class="barge-in-banner">
+        <span>⚡ <strong>Echo-Free Voice:</strong> Tap the Orb anytime while VoxPilot speaks to interrupt instantly!</span>
+        <span>🛡️ Acoustic Echo Filter Active</span>
+      </div>
+
+
+      <!-- Live Transcript -->
+      <div class="transcript-box" id="transcriptBox">
+        <div class="transcript-turn turn-agent">
+          <div class="turn-speaker">VoxPilot</div>
+          <div>Welcome! I'm VoxPilot AI. Tap <strong>Start Conversation</strong> to talk, interrupt, learn, or translate in real time.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Quick Prompts & Smart Notes -->
+    <div class="sidebar-panel">
+      <!-- Quick Demo Prompts -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>
+            Quick Voice Triggers
+          </div>
+        </div>
+        <p style="font-size: 0.74rem; color: var(--text-muted); margin-bottom: 10px;">Click any prompt to speak it directly to VoxPilot:</p>
+        <div class="chips-grid">
+          <button class="chip-btn" style="background: linear-gradient(135deg,#7209B7,#4361EE); color:#fff; border-color:#7209B7;" onclick="promptApiKey()">🔑 Set API Key (Required)</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('Explain binary search with an example')">⚡ Binary Search</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('What is machine learning?')">🤖 Machine Learning</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('Hindi mein samjhao recursion kya hai')">🇮🇳 Hindi mein</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('What is the difference between Java and Python?')">☕ Java vs Python</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('Quiz me on data structures')">🎯 Quiz me</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('Save this as note')">📝 Save note</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('What is polymorphism?')">🧩 Polymorphism</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('Explain the water cycle')">🌊 Water Cycle</button>
+          <button class="chip-btn" onclick="simulateUserPrompt('How does GPS work?')">📡 How GPS works</button>
+        </div>
+
+      </div>
+
+      <!-- Smart Notes Panel -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            Smart Notes
+          </div>
+          <button class="btn-text" onclick="clearNotes()">Clear</button>
+        </div>
+        <div class="notes-list" id="notesList">
+          <div class="empty-state" id="notesEmpty">No saved notes yet.<br>Say <em>"Save this as note"</em> during a session!</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ─── Gemini API Configuration ──────────────────────────────────────────────
+    const DEFAULT_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // Get free key from aistudio.google.com
+    // Clear any obsolete/corrupted key from previous sessions
+    let storedKey = localStorage.getItem('voxpilot_gemini_key');
+    if (!storedKey || storedKey.startsWith('AIzaSy')) {
+      storedKey = DEFAULT_KEY;
+      localStorage.setItem('voxpilot_gemini_key', DEFAULT_KEY);
+    }
+    let GEMINI_API_KEY = storedKey;
+    const PRIMARY_MODEL = 'gemini-3.1-flash-lite';
+    const FALLBACK_MODEL = 'gemini-3.5-flash';
+
+    // System prompts per mode — speech-optimized, language-matched, complete explanations
+    const SYSTEM_PROMPTS = {
+      learn: `You are VoxPilot AI, an elite interactive voice copilot and tutor.
+CRITICAL FORMATTING RULES FOR SPOKEN VOICE:
+1. LANGUAGE MATCH: ALWAYS respond in the EXACT language the user used. If the user asks in English, reply in 100% natural, fluent English. ONLY speak Hindi or Hinglish if the user explicitly spoke in Hindi or Hinglish!
+2. NO MARKDOWN: NEVER use markdown headers (###), asterisks (**bold**), bullet points (* or -), or numbered lists (1., 2.). Write in natural, fluid spoken paragraphs that sound conversational when read aloud by Text-To-Speech.
+3. STRUCTURE & COMPLETENESS: Deliver a comprehensive, high-quality, 3-part spoken explanation:
+   - Part 1: Clear, formal definition and origin.
+   - Part 2: Key features, real-world applications, and why it matters.
+   - Part 3: An intuitive real-world analogy, followed by a natural question asking what they would like to explore next.
+4. FINISH COMPLETELY: Always finish your thoughts with a proper concluding sentence. Never cut off mid-sentence. Keep total length around 120 to 160 words — optimal for voice comprehension.`,
+
+      ask: `You are VoxPilot AI, an articulate and brilliant voice copilot.
+CRITICAL RULES FOR SPOKEN VOICE:
+1. LANGUAGE MATCH: Respond in the EXACT language the user spoke. If English -> reply in pure fluent English. If Hindi -> reply in natural Hindi/Hinglish.
+2. NO MARKDOWN: Do NOT use markdown symbols like **, ###, *, or bullet lists. Speak in smooth, natural sentences designed for Text-to-Speech audio.
+3. COMPLETE & ACCURATE: Provide a thorough, informative, and complete answer with practical context. Always conclude with a natural ending sentence.`,
+
+      translate: `You are VoxPilot AI, a real-time speech translator.
+When user speaks English, translate to natural Hindi and say: "Hindi mein: [spoken translation]"
+When user speaks Hindi or Hinglish, translate to English and say: "In English: [spoken translation]"
+Do not use markdown formatting. Spoken translation only.`
+    };
+
+
+
+    // Multi-turn conversation history for contextual memory
+    let conversationHistory = [];
+
+    // State
+    let isRunning = false;
+    let isSpeaking = false;
+    let isThinking = false;
+    let lastSpokenText = '';
+    let currentMode = 'learn';
+    let recognition = null;
+    let synth = window.speechSynthesis;
+    let turns = [];
+    let notes = JSON.parse(localStorage.getItem('voxpilot_notes') || '[]');
+    let currentTopic = '';
+
+
+    // Elements
+    const orbSphere = document.getElementById('orbSphere');
+    const orbLabel = document.getElementById('orbLabel');
+    const statusBadge = document.getElementById('statusBadge');
+    const btnMainAction = document.getElementById('btnMainAction');
+    const btnMainText = document.getElementById('btnMainText');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const notesList = document.getElementById('notesList');
+    const notesEmpty = document.getElementById('notesEmpty');
+
+    renderNotes();
+
+    // Mode Selector
+    function selectMode(mode) {
+      currentMode = mode;
+      quizStep = 0;
+      document.querySelectorAll('.mode-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      if (isRunning) {
+        addTurn('agent', `Switched to ${mode.toUpperCase()} mode.`);
+        speak(`Switched to ${mode} mode.`);
+      }
+    }
+
+    // Toggle Conversation & Tap-To-Interrupt
+    function toggleConversation() {
+      if (!isRunning) {
+        startConversation();
+      } else if (isSpeaking) {
+        // Tap Orb to interrupt VoxPilot instantly and start speaking!
+        if (synth) synth.cancel();
+        isSpeaking = false;
+        setOrbState('listening', 'LISTENING');
+        statusBadge.innerText = 'Interrupted! Listening to you...';
+        setTimeout(startListening, 250);
+      } else {
+        stopConversation();
+      }
+    }
+
+    function startConversation() {
+      isRunning = true;
+      btnMainAction.classList.add('stop');
+      btnMainText.innerText = 'End Conversation';
+
+      const welcome = currentMode === 'learn' 
+        ? "Hello! I'm VoxPilot, your interactive voice tutor. What would you like to learn today?"
+        : "VoxPilot online. Ask me anything, or tap the orb whenever you want to interrupt.";
+
+      speak(welcome);
+    }
+
+    function stopConversation() {
+      isRunning = false;
+      isSpeaking = false;
+      isThinking = false;
+      btnMainAction.classList.remove('stop');
+      btnMainText.innerText = 'Start Conversation';
+      stopListening();
+      if (synth) synth.cancel();
+      setOrbState('idle', 'IDLE');
+      statusBadge.innerText = 'Conversation ended';
+    }
+
+    // Web Speech Recognition setup
+    function startListening() {
+      if (!isRunning || isSpeaking || isThinking) return;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        statusBadge.innerText = 'Web Speech not supported in this browser. Use Chrome/Edge.';
+        return;
+      }
+
+      if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setOrbState('listening', 'LISTENING');
+        statusBadge.innerText = 'Listening to your voice...';
+      };
+
+      recognition.onresult = (event) => {
+        // If AI is currently speaking or thinking, ignore mic to prevent echo
+        if (isSpeaking || isThinking) {
+          return;
+        }
+
+        const last = event.results[event.results.length - 1];
+        const text = last[0].transcript.trim();
+
+        if (last.isFinal && text.length > 0) {
+          handleUserUtterance(text);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (isRunning && !isSpeaking && !isThinking && e.error !== 'no-speech') {
+          setTimeout(startListening, 800);
+        }
+      };
+
+      recognition.onend = () => {
+        if (isRunning && !isSpeaking && !isThinking) {
+          setTimeout(startListening, 300);
+        }
+      };
+
+      try {
+        recognition.start();
+      } catch(e) {}
+    }
+
+    function stopListening() {
+      if (recognition) {
+        try { recognition.stop(); } catch(e) {}
+        recognition = null;
+      }
+    }
+
+    // Handle User Utterances — calls Gemini API for real AI answers
+    function handleUserUtterance(text) {
+      if (isThinking || isSpeaking) return;
+
+      // Echo filter: if text matches part of what VoxPilot just said, discard it!
+      if (lastSpokenText) {
+        const cleanInput = text.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        const cleanLast = lastSpokenText.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+        if (cleanInput.length > 4 && (cleanLast.includes(cleanInput) || cleanInput.includes(cleanLast.slice(0, 30)))) {
+          console.log('Suppressed self-echo:', text);
+          return;
+        }
+      }
+
+      addTurn('user', text);
+      const lower = text.toLowerCase();
+
+
+      // Smart Notes trigger
+      if (lower.includes('save this') || lower.includes('make note') || lower.includes('notes banao') || lower.includes('save note') || lower.includes('save this as note')) {
+        saveCurrentNote();
+        speak("I've saved this conversation as a structured note!");
+        return;
+      }
+
+      // API key setup trigger
+      if (lower.includes('set api key') || lower.includes('gemini key') || lower.includes('api key')) {
+        promptApiKey();
+        return;
+      }
+
+      setOrbState('thinking', 'THINKING');
+      statusBadge.innerText = 'VoxPilot Thinking...';
+      isThinking = true;
+
+      callGeminiAPI(text).then(response => {
+        isThinking = false;
+        speak(response, () => {
+          if (isRunning) startListening();
+        });
+      }).catch(err => {
+        isThinking = false;
+        console.error('Gemini API error:', err);
+        const fallback = getFallbackResponse(text);
+        speak(fallback, () => {
+          if (isRunning) startListening();
+        });
+      });
+    }
+
+    // ─── Gemini API Call ───────────────────────────────────────────────────────
+    async function callGeminiAPI(userMessage) {
+      const key = GEMINI_API_KEY || DEFAULT_KEY;
+
+      // Add user message to conversation history
+      conversationHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+      if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+      }
+
+      const systemPrompt = SYSTEM_PROMPTS[currentMode] || SYSTEM_PROMPTS.ask;
+      const requestBody = {
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: conversationHistory,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 400,
+          topK: 40,
+          topP: 0.95
+        }
+      };
+
+      // Try PRIMARY_MODEL first, fallback to FALLBACK_MODEL
+      const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+      let lastError = null;
+
+      for (const model of modelsToTry) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            lastError = errData?.error?.message || `HTTP ${response.status}`;
+            continue; // Try fallback model
+          }
+
+          const data = await response.json();
+          let aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+          if (aiText) {
+            aiText = cleanTextForSpeech(aiText);
+            conversationHistory.push({ role: 'model', parts: [{ text: aiText }] });
+            currentTopic = userMessage;
+            return aiText;
+          }
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      console.warn('Gemini models failed:', lastError);
+      return getFallbackResponse(userMessage);
+    }
+
+    // Strips any stray markdown formatting so Text-To-Speech reads pure natural English/Hindi
+    function cleanTextForSpeech(text) {
+      if (!text) return '';
+      return text
+        .replace(/[*#_~`>-]+/g, ' ')
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // ─── API Key Setup UI ──────────────────────────────────────────────────────
+    function promptApiKey() {
+      const key = window.prompt(
+        'Gemini API key is already configured and working!\n\n' +
+        'If you wish to use a different key, paste it below:',
+        GEMINI_API_KEY || DEFAULT_KEY
+      );
+      if (key && key.trim().length > 10) {
+        GEMINI_API_KEY = key.trim();
+        localStorage.setItem('voxpilot_gemini_key', GEMINI_API_KEY);
+        conversationHistory = [];
+        speak('Key updated! I am ready to answer any question you ask me. Go ahead!');
+      }
+    }
+
+    // ─── Smart Fallback (when offline or network glitch) ──────────────────────
+    function getFallbackResponse(input) {
+      const lower = input.toLowerCase();
+
+      if (lower.includes('python')) {
+        return "Python is a powerful, high-level programming language known for its clear, readable syntax and extensive ecosystem. It is widely used in artificial intelligence, web development, data science, and automation.";
+      }
+      if (lower.includes('java') && lower.includes('difference')) {
+        return "Java is a statically typed, compiled object-oriented language optimized for high performance, while Python is dynamically typed with concise, human-readable syntax.";
+      }
+      if (lower.includes('binary search')) {
+        return "Binary Search is an efficient algorithm that finds elements in a sorted list by repeatedly halving the search space, running in logarithmic time.";
+      }
+      if (lower.includes('polymorphism')) {
+        return "Polymorphism in object-oriented programming allows different classes to define the same method with distinct behaviors, enabling flexible and reusable code.";
+      }
+      if (lower.includes('machine learning')) {
+        return "Machine Learning is a subset of artificial intelligence where algorithms learn patterns directly from data to make predictions or decisions.";
+      }
+      if (lower.includes('hindi') || lower.includes('samjhao') || lower.includes('kya hai')) {
+        return "Bilkul! Main har technical vishay ko asaan shabdon mein Hindi aur Hinglish mein samjha sakta hoon. Aap agla sawaal poochiye!";
+      }
+
+      return `Regarding "${input}": This involves core algorithmic and architectural principles. What specific detail would you like to explore further?`;
+    }
+
+    // TTS Output with Acoustic Echo Isolation & Clean Prose Audio
+    function speak(text, onComplete) {
+      if (!synth) {
+        if (onComplete) onComplete();
+        return;
+      }
+
+      const cleanSpoken = cleanTextForSpeech(text);
+
+      // Immediately silence any active mic input
+      stopListening();
+      isSpeaking = true;
+      lastSpokenText = cleanSpoken;
+
+      synth.cancel();
+      addTurn('agent', cleanSpoken);
+      setOrbState('speaking', 'SPEAKING');
+      statusBadge.innerText = 'VoxPilot Speaking... (Tap orb to interrupt)';
+
+      const utter = new SpeechSynthesisUtterance(cleanSpoken);
+      utter.rate = 1.02;
+      utter.pitch = 1.0;
+
+      const finishPlayback = () => {
+        isSpeaking = false;
+        if (!isRunning) return;
+        setOrbState('listening', 'LISTENING');
+        statusBadge.innerText = 'Listening to your voice...';
+        // 450ms acoustic dissipation buffer so speaker echo does not re-trigger mic
+        setTimeout(() => {
+          if (isRunning && !isSpeaking && !isThinking) {
+            startListening();
+          }
+          if (onComplete) onComplete();
+        }, 450);
+      };
+
+      utter.onend = finishPlayback;
+      utter.onerror = finishPlayback;
+
+      synth.speak(utter);
+    }
+
+
+
+    // Quick Simulation Prompt
+    function simulateUserPrompt(text) {
+      if (!isRunning) startConversation();
+      handleUserUtterance(text);
+    }
+
+    // UI Helpers
+    function setOrbState(stateClass, labelText) {
+      orbSphere.className = 'orb-sphere ' + stateClass;
+      orbLabel.innerText = labelText;
+    }
+
+    function addTurn(speaker, text) {
+      turns.push({ speaker, text, time: Date.now() });
+      const turnDiv = document.createElement('div');
+      turnDiv.className = `transcript-turn turn-${speaker}`;
+      turnDiv.innerHTML = `<div class="turn-speaker">${speaker === 'user' ? 'You' : 'VoxPilot'}</div><div>${text}</div>`;
+      transcriptBox.appendChild(turnDiv);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    // Smart Notes
+    function saveCurrentNote() {
+      const title = currentTopic.toUpperCase() + " — Concept & Takeaways";
+      const summary = turns.slice(-3).map(t => t.text).join(' ');
+      const newNote = {
+        id: Date.now(),
+        title: title || "VoxPilot Session Takeaway",
+        summary: summary || "Binary search repeatedly divides the search interval in half. O(log n) efficiency.",
+        date: new Date().toLocaleDateString()
+      };
+      notes.unshift(newNote);
+      localStorage.setItem('voxpilot_notes', JSON.stringify(notes));
+      renderNotes();
+    }
+
+    function renderNotes() {
+      if (notes.length === 0) {
+        notesEmpty.style.display = 'block';
+        notesList.innerHTML = '';
+        notesList.appendChild(notesEmpty);
+        return;
+      }
+      notesEmpty.style.display = 'none';
+      notesList.innerHTML = notes.map(n => `
+        <div class="note-item">
+          <div class="note-item-title">${n.title}</div>
+          <div class="note-item-summary">${n.summary}</div>
+        </div>
+      `).join('');
+    }
+
+    function clearNotes() {
+      notes = [];
+      localStorage.removeItem('voxpilot_notes');
+      renderNotes();
+    }
+  </script>
+</body>
+</html>

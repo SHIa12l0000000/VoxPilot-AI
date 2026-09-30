@@ -1,0 +1,39 @@
+<resources>
+    <string name="app_name">VoxPilot AI</string>
+    <string name="app_tagline">Talk. Interrupt. Learn. Act.</string>
+    <string name="app_subtitle">Your real-time voice copilot</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Modes -->
+    <string name="mode_ask">Ask</string>
+    <string name="mode_learn">Learn</string>
+    <string name="mode_translate">Translate</string>
+    <string name="mode_action">Action</string>
+
+    <!-- Conversation States -->
+    <string name="state_idle">Ready when you are</string>
+    <string name="state_connecting">Connecting to VoxPilot…</string>
+    <string name="state_listening">Listening for your turn</string>
+    <string name="state_thinking">Thinking through response…</string>
+    <string name="state_speaking">Speaking · Tap to interrupt</string>
+    <string name="state_error">Connection error</string>
+
+    <!-- Actions -->
+    <string name="action_start">Start Conversation</string>
+    <string name="action_end">End Conversation</string>
+    <string name="action_mute">Mute</string>
+    <string name="action_unmute">Unmute</string>
+    <string name="action_save_note">Save Note</string>
+
+    <!-- Error Messages -->
+    <string name="error_server_unavailable">VoxPilot couldn\'t reach the voice server.</string>
+    <string name="error_mic_denied">Microphone access is required for voice conversations.</string>
+    <string name="error_rtc_failure">Voice connection was interrupted.</string>
+    <string name="error_agent_failure">VoxPilot couldn\'t start the AI session.</string>
+    <string name="error_offline">You\'re offline. Reconnect to continue.</string>
+</resources>
